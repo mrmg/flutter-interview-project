@@ -17,11 +17,25 @@ Future<List<Market>> marketProvider(MarketProviderRef ref,
   }
 
   final List jsonList = jsonData["data"];
-  return jsonList
-      .map((value) => Market(
-            value["CompanyName"] ?? '',
-            value["Epic"] ?? '',
-            value["CurrentPrice"] ?? '',
-          ))
-      .toList();
+  return jsonList.map((value) {
+    // Validate required fields
+    if (!value.containsKey('CompanyName') ||
+        !value.containsKey('Epic') ||
+        !value.containsKey('CurrentPrice')) {
+      throw Exception('Invalid market data: missing required fields');
+    }
+
+    // Validate price format
+    final price = value["CurrentPrice"].toString().trim();
+    if (price.isEmpty || !RegExp(r'^\d+(\.\d{1,3})?$').hasMatch(price)) {
+      throw Exception(
+          'Invalid price format: must be a number with 0 to 3 decimal places');
+    }
+
+    return Market(
+      value["CompanyName"],
+      value["Epic"],
+      price,
+    );
+  }).toList();
 }

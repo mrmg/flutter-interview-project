@@ -70,5 +70,75 @@ void main() {
       expect(markets, isA<List<Market>>());
       expect(markets.length, greaterThan(0));
     });
+
+    test('handles empty market list', () async {
+      const mockJson = '''
+      {
+        "data": []
+      }
+      ''';
+      final mockBundle = TestAssetBundle({
+        'assets/markets.json': mockJson,
+      });
+      final container = ProviderContainer();
+      final markets =
+          await container.read(marketProviderProvider(mockBundle).future);
+      expect(markets, isEmpty);
+    });
+
+    test('handles malformed market data', () async {
+      const mockJson = '''
+      {
+        "data": [
+          {
+            "CompanyName": "Test Company",
+            "Epic": "TEST"
+          }
+        ]
+      }
+      ''';
+      final mockBundle = TestAssetBundle({
+        'assets/markets.json': mockJson,
+      });
+      final container = ProviderContainer();
+      expect(
+        () async =>
+            await container.read(marketProviderProvider(mockBundle).future),
+        throwsException,
+      );
+    });
+
+    test('handles asset loading failure', () async {
+      final mockBundle = TestAssetBundle({});
+      final container = ProviderContainer();
+      expect(
+        () async =>
+            await container.read(marketProviderProvider(mockBundle).future),
+        throwsA(isA<FlutterError>()),
+      );
+    });
+
+    test('validates price format', () async {
+      const mockJson = '''
+      {
+        "data": [
+          {
+            "CompanyName": "Test Company",
+            "Epic": "TEST",
+            "CurrentPrice": "invalid"
+          }
+        ]
+      }
+      ''';
+      final mockBundle = TestAssetBundle({
+        'assets/markets.json': mockJson,
+      });
+      final container = ProviderContainer();
+      expect(
+        () async =>
+            await container.read(marketProviderProvider(mockBundle).future),
+        throwsException,
+      );
+    });
   });
 }
